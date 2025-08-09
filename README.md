@@ -1,6 +1,6 @@
 <!-- Project Logo -->
 <p align="center">
-  <img src="assets/logo.svg" alt="Cerebrax.ai Logo" width="200" />
+  <img src="client/src/assets/logo1.svg" alt="Cerebrax.ai Logo" width="200" />
 </p>
 
 <h1 align="center" style="color:#4F46E5;">🧠 Cerebrax.ai</h1>
