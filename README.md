@@ -11,12 +11,10 @@
 
 ## ✨ Highlights  
 - **Fast Content Generation:** Create articles and titles in seconds using AI.
-- **Automated CI/CD Pipeline:** Containerized with Docker and fully automated builds/tests via GitHub Actions for reliable deployments.
 - **All-in-One Toolkit:** Multiple AI features (writing, image editing, resume analysis) in one place — no need to switch apps.  
 
 ## 📸 Quick Preview  
-
-[Home Page](client/src/assets/Screenshot 2025-08-09 225248.png)
+<img src="client/src/assets/Screenshot 2025-08-09 225248.png" alt="Home Page"  />
 [AI-Tools](client/src/assets/Screenshot 2025-08-09 230949.png)
 [Sign Up Page](client/src/assets/Screenshot 2025-08-09 230931.png)
 [Dash-Board](client/src/assets/Screenshot 2025-08-09 231037.png)
