@@ -15,10 +15,8 @@
 
 ## 📸 Quick Preview  
 <img src="client/src/assets/Screenshot 2025-08-09 225248.png" alt="Home Page"  />
-[AI-Tools](client/src/assets/Screenshot 2025-08-09 230949.png)
-[Sign Up Page](client/src/assets/Screenshot 2025-08-09 230931.png)
-[Dash-Board](client/src/assets/Screenshot 2025-08-09 231037.png)
-[Image Generation Using AI](client/src/assets/Screenshot 2025-08-09 231051.png)
+<img src="client/src/assets/Screenshot 2025-08-09 230949.png" alt="AI-Tools"  />
+<img src="client/src/assets/Screenshot 2025-08-09 231051.png" alt="Image-Generation"  />
 
 
 ## 🚀 Why This Project Matters  
