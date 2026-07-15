@@ -1,5 +1,27 @@
 import sql from "../configs/db.js";
+import { FREE_USAGE_LIMIT } from "../configs/plans.js";
 
+
+// Report the current user's free-usage budget so the client can show a meter
+export const getUsage = async (req, res) => {
+    try {
+        const plan = req.plan;
+        const free_usage = req.free_usage ?? 0;
+        const remaining = plan === 'premium'
+            ? null
+            : Math.max(FREE_USAGE_LIMIT - free_usage, 0);
+
+        res.json({
+            success: true,
+            plan,
+            free_usage,
+            limit: FREE_USAGE_LIMIT,
+            remaining,
+        });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+}
 
 export const getUserCreations= async(req, res) => {
     try {
@@ -56,7 +78,27 @@ export const toogleLikeCreation= async(req, res) => {
         await sql `UPDATE creations SET likes = ${formattedArray}::text[] WHERE id = ${id}`;
 
         res.json({success: true, message});
-        
+
+    } catch (error) {
+        res.json({success: false, message: error.message});
+    }
+}
+
+
+export const deleteCreation = async (req, res) => {
+    try {
+        const {userId} = req.auth()
+        const {id} = req.params
+
+        // Only allow users to delete their own creations
+        const [deleted] = await sql `DELETE FROM creations WHERE id = ${id} AND user_id = ${userId} RETURNING id`;
+
+        if (!deleted) {
+            return res.json({success: false, message: "Creation not found"});
+        }
+
+        res.json({success: true, message: "Creation deleted successfully"});
+
     } catch (error) {
         res.json({success: false, message: error.message});
     }
