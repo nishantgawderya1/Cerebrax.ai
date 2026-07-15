@@ -2,11 +2,14 @@ import OpenAI from "openai";
 import sql from "../configs/db.js";
 import cloudinaryConfig from "../configs/cloudinary.js";
 import {v2 as cloudinary} from 'cloudinary';
+import { clerkClient } from '@clerk/express';
 import axios from 'axios';
 import fs from 'fs'
 import pdf from 'pdf-parse/lib/pdf-parse.js'
 
 
+// Number of free creations every user gets across all tools before the premium gate applies
+const FREE_USAGE_LIMIT = 5;
 
 
 const AI = new OpenAI({
@@ -22,7 +25,7 @@ export const generateArticle = async (req, res) => {
     const plan = req.plan;
     const free_usage = req.free_usage;
 
-    if (plan !== 'premium' && free_usage >= 10) {
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
         return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
@@ -65,7 +68,7 @@ export const generateBlogTitle = async (req, res) => {
     const plan = req.plan;
     const free_usage = req.free_usage;
 
-    if (plan !== 'premium' && free_usage >= 10) {
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
         return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
@@ -101,9 +104,10 @@ export const generateImage = async (req, res) => {
     const {userId} = req.auth();
     const { prompt, publish } = req.body;
     const plan = req.plan;
+    const free_usage = req.free_usage;
 
-    if (plan !== 'premium' ) { //ADD && free_usage >= 10 INSIDE IF CONDITION TO LIMIT FREE USAGE
-        return res.json({ success: false, message: 'THIS FEATURE IS ONLY FOR PREMIUM USERS' })
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
+        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     const formData = new FormData()
@@ -121,13 +125,13 @@ export const generateImage = async (req, res) => {
 
     await sql`INSERT INTO creations (user_id, prompt, content, type, publish ) VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${publish ?? false})`;
 
-    //if (plan !== 'premium') {
-    //    await clerkClient.users.updateUserMetadata(userId, {
-    //        privateMetadata: {
-    //            free_usage: free_usage + 1
-    //        }
-    //    })
-    //}
+    if (plan !== 'premium') {
+        await clerkClient.users.updateUserMetadata(userId, {
+            privateMetadata: {
+                free_usage: free_usage + 1
+            }
+        })
+    }
 
     res.json({ success: true, content: secure_url })
   } catch (error) {
@@ -142,17 +146,26 @@ export const removeImageBackground = async (req, res) => {
     const {userId} = req.auth();
     const image = req.file;
     const plan=req.plan;
+    const free_usage = req.free_usage;
 
-    if (plan !== 'premium' ) { 
-        return res.json({ success: false, message: 'THIS FEATURE IS ONLY FOR PREMIUM USERS' })
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
+        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     const{secure_url}=await cloudinary.uploader.upload(image.path, {transformation: [{effect: 'background_removal',
       background_removal: 'remove_the_background'
      }]})
- 
+
      //To store the image in database
     await sql`INSERT INTO creations (user_id, prompt, content, type ) VALUES (${userId}, 'Remove background from the image', ${secure_url}, 'image')`;
+
+    if (plan !== 'premium') {
+        await clerkClient.users.updateUserMetadata(userId, {
+            privateMetadata: {
+                free_usage: free_usage + 1
+            }
+        })
+    }
 
     res.json({ success: true, content: secure_url })
   } catch (error) {
@@ -168,26 +181,32 @@ export const removeImageObject = async (req, res) => {
   try {
     const {userId} = req.auth();
     const {object}= req.body;
-    //const { prompt, publish } = req.body;
     const image = req.file;
-    //const free_usage = req.free_usage; To MAKE IMAGE GENRATION FREE
     const plan=req.plan;
-    
+    const free_usage = req.free_usage;
 
-    if (plan !== 'premium' ) { //ADD && free_usage >= 10 INSIDE IF CONDITION TO LIMIT FREE USAGE
-        return res.json({ success: false, message: 'THIS FEATURE IS ONLY FOR PREMIUM USERS' })
+
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
+        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
-    
+
     const{public_id}= await cloudinary.uploader.upload(image.path)
 
     const imageUrl = cloudinary.url(public_id, {
       effect: `gen_remove:${object}`, // Use the object to be removed
       resource_type: 'image'})
- 
-     //To store the image in database
-    await sql `INSERT INTO creations (user_id, prompt, content, type ) VALUES (${userId}, ${ 'Removed ${object} from image'}, ${imageUrl}, 'image')`;
 
+     //To store the image in database
+    await sql `INSERT INTO creations (user_id, prompt, content, type ) VALUES (${userId}, ${`Removed ${object} from image`}, ${imageUrl}, 'image')`;
+
+    if (plan !== 'premium') {
+        await clerkClient.users.updateUserMetadata(userId, {
+            privateMetadata: {
+                free_usage: free_usage + 1
+            }
+        })
+    }
 
     res.json({ success: true, content: imageUrl })
   } catch (error) {
@@ -203,13 +222,12 @@ export const resumeReview = async (req, res) => {
   try {
     const {userId} = req.auth();
     const resume= req.file;
-    //const { prompt, publish } = req.body;
-    //const free_usage = req.free_usage; To MAKE IMAGE GENRATION FREE
     const plan=req.plan;
-    
+    const free_usage = req.free_usage;
 
-    if (plan !== 'premium' ) { //ADD && free_usage >= 10 INSIDE IF CONDITION TO LIMIT FREE USAGE
-        return res.json({ success: false, message: 'THIS FEATURE IS ONLY FOR PREMIUM USERS' })
+
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
+        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     if(resume.size > 5 * 1024 * 1024) { // Check if file size is greater than 5MB
@@ -234,7 +252,13 @@ export const resumeReview = async (req, res) => {
     //To store the image in database
     await sql`INSERT INTO creations (user_id, prompt, content, type ) VALUES (${userId}, 'Review the uploaded resume', ${content}, 'review-resume')`;
 
-    
+    if (plan !== 'premium') {
+        await clerkClient.users.updateUserMetadata(userId, {
+            privateMetadata: {
+                free_usage: free_usage + 1
+            }
+        })
+    }
 
     res.json({ success: true, content })
   } catch (error) {

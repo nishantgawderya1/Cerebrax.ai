@@ -7,7 +7,7 @@ import Creationitem from '../components/Creationitem'
 import axios from 'axios'
 import toast from 'react-hot-toast';
 
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 
 
 const Dashboard = () => {
@@ -26,10 +26,10 @@ const Dashboard = () => {
       if (data.success) {
         setCreations(data.creations)
       }else{
-        Toast.error(data.message || 'Failed to fetch creations')
+        toast.error(data.message || 'Failed to fetch creations')
       }
     } catch (error) {
-      Toast.error(error.message || 'Failed to fetch creations')
+      toast.error(error.message || 'Failed to fetch creations')
     }
     setLoading(false)
   }

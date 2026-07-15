@@ -60,8 +60,8 @@ const Community = () => {
       }
 
       const { data } = await axios.post(
-        "/api/user/toggle-creation-like",
-        { creationId: id },
+        "/api/user/toggle-like-creation",
+        { id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
