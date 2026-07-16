@@ -3,6 +3,7 @@ import { Eraser, FileText, Hash, House, Image, Scissors, SquarePen, Users, LogOu
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAppContext } from '../context/AppContext'
+import { textTools } from '../config/textTools'
 
 const navItems = [
   { to: '/ai', label: 'Dashboard', Icon: House },
@@ -14,6 +15,19 @@ const navItems = [
   { to: '/ai/review-resume', label: 'Review Resume', Icon: FileText },
   { to: '/ai/community', label: 'Community', Icon: Users },
 ]
+
+// Text tools grouped by category for the sidebar sections
+const textToolsByCategory = textTools.reduce((acc, tool) => {
+  (acc[tool.category] ||= []).push(tool)
+  return acc
+}, {})
+
+const navLinkClass = ({ isActive }) =>
+  `px-4 py-2.5 flex items-center gap-3 rounded transition-colors duration-200 ${
+    isActive
+      ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white'
+      : 'text-gray-700 hover:bg-gray-100'
+  }`
 
 const Sidebar = ({ sidebar, setSidebar }) => {
   const { user } = useUser()
@@ -28,23 +42,17 @@ const Sidebar = ({ sidebar, setSidebar }) => {
       className={`w-60 bg-white border-r border-gray-200 flex flex-col justify-between items-center max-sm:absolute top-14 bottom-0
       ${sidebar ? 'translate-x-0' : 'max-sm:-translate-x-full'} transition-transform duration-300 ease-in-out`}
     >
-      <div className="my-7 w-full flex flex-col items-center">
+      <div className="my-7 w-full flex flex-col items-center flex-1 min-h-0 overflow-y-auto">
         <img src={user.imageUrl} alt="UserAvatar" className="w-16 h-16 rounded-full object-cover" />
         <h1 className="mt-2 text-center text-lg font-semibold">{user.fullName}</h1>
-        <nav className="px-6 mt-5 text-sm text-gray-700 font-medium">
+        <nav className="w-full px-6 mt-5 text-sm text-gray-700 font-medium">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/ai'}
               onClick={() => setSidebar(false)}
-              className={({ isActive }) =>
-                `px-4 py-2.5 flex items-center gap-3 rounded transition-colors duration-200 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`
-              }
+              className={navLinkClass}
             >
               {({ isActive }) => (
                 <>
@@ -53,6 +61,29 @@ const Sidebar = ({ sidebar, setSidebar }) => {
                 </>
               )}
             </NavLink>
+          ))}
+
+          {Object.entries(textToolsByCategory).map(([category, tools]) => (
+            <div key={category}>
+              <p className="px-4 mt-4 mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                {category}
+              </p>
+              {tools.map((tool) => (
+                <NavLink
+                  key={tool.slug}
+                  to={`/ai/text/${tool.slug}`}
+                  onClick={() => setSidebar(false)}
+                  className={navLinkClass}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <tool.Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
+                      <span>{tool.title}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
       </div>

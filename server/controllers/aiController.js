@@ -7,6 +7,7 @@ import axios from 'axios';
 import fs from 'fs'
 import pdf from 'pdf-parse/lib/pdf-parse.js'
 import { FREE_USAGE_LIMIT } from "../configs/plans.js";
+import { textTools } from "../configs/textTools.js";
 
 
 const AI = new OpenAI({
@@ -79,6 +80,56 @@ export const generateBlogTitle = async (req, res) => {
     const content = response.choices[0].message.content
 
     await sql `INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, ${prompt}, ${content}, 'blog-title')`;
+
+    if (plan !== 'premium') {
+        await clerkClient.users.updateUserMetadata(userId, {
+            privateMetadata: {
+                free_usage: free_usage + 1
+            }
+        })
+    }
+
+    res.json({ success: true, content })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).json({ success: false, message: error.message })
+  }
+}
+
+// Generic text tool (summarize, paraphrase, grammar, translate, emails, social, code, ...)
+// The specific tool is selected via the `tool` field and defined in configs/textTools.js
+export const generateText = async (req, res) => {
+  try {
+    const {userId} = req.auth();
+    const { tool, input, options = {} } = req.body;
+    const plan = req.plan;
+    const free_usage = req.free_usage;
+
+    const config = textTools[tool];
+    if (!config) {
+        return res.status(400).json({ success: false, message: 'Unknown tool' })
+    }
+
+    if (!input || !input.trim()) {
+        return res.status(400).json({ success: false, message: 'Input is required' })
+    }
+
+    if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+    }
+
+    const prompt = config.buildPrompt({ input, ...options });
+
+    const response = await AI.chat.completions.create({
+        model: "gemini-2.0-flash",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: config.maxTokens,
+    });
+
+    const content = response.choices[0].message.content
+
+    await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, ${input}, ${content}, ${config.type})`;
 
     if (plan !== 'premium') {
         await clerkClient.users.updateUserMetadata(userId, {
