@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Gem, Sparkles, Image as ImageIcon, FileText, CalendarDays, Search } from 'lucide-react'
 import { Protect, useAuth } from '@clerk/clerk-react'
 import Creationitem from '../components/Creationitem'
@@ -24,7 +24,7 @@ const Dashboard = () => {
   const [search, setSearch] = useState('')
   const { getToken } = useAuth()
 
-  const getDashboardData = async () => {
+  const getDashboardData = useCallback(async () => {
     try {
       const { data } = await axios.get('/api/user/get-user-creations', {
         headers: {
@@ -37,10 +37,10 @@ const Dashboard = () => {
         toast.error(data.message || 'Failed to fetch creations')
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch creations')
+      toast.error(error.response?.data?.message || error.message || 'Failed to fetch creations')
     }
     setLoading(false)
-  }
+  }, [getToken])
 
   const handleDelete = async (id) => {
     try {
@@ -56,13 +56,13 @@ const Dashboard = () => {
         toast.error(data.message || 'Failed to delete creation')
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to delete creation')
+      toast.error(error.response?.data?.message || error.message || 'Failed to delete creation')
     }
   }
 
   useEffect(() => {
     getDashboardData()
-  }, [])
+  }, [getDashboardData])
 
   // Derived stats
   const countByType = (type) => creations.filter((c) => c.type === type).length

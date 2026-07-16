@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import axios from "axios";
@@ -14,7 +14,7 @@ const Community = () => {
   const [likeLoadingIds, setLikeLoadingIds] = useState(new Set());
 
   // Fetch published creations with authentication token
-  const fetchCreations = async () => {
+  const fetchCreations = useCallback(async () => {
     setLoading(true);
     try {
       const token = await getToken();
@@ -35,29 +35,42 @@ const Community = () => {
       }
     } catch (error) {
       console.error("Error fetching creations:", error);
-      toast.error("Failed to fetch creations.");
+      toast.error(error.response?.data?.message || "Failed to fetch creations.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken]);
 
-  // Toggle like functionality with loading state per creation for better UX
+  // Optimistically toggle the like locally, then sync with the server (revert on failure)
   const imageLikeToggle = async (id) => {
     if (likeLoadingIds.has(id)) return; // Prevent multiple clicks on same item
+
+    const uid = user?.id;
+    if (!uid) {
+      toast.error("Authentication required.");
+      return;
+    }
+
+    // Toggle is its own inverse, so the same function both applies and reverts
+    const applyToggle = () =>
+      setCreations((prev) =>
+        prev.map((c) => {
+          if (c.id !== id) return c;
+          const likes = c.likes || [];
+          return likes.includes(uid)
+            ? { ...c, likes: likes.filter((u) => u !== uid) }
+            : { ...c, likes: [...likes, uid] };
+        })
+      );
+
+    // Apply immediately for a snappy UI — no full refetch
+    applyToggle();
 
     try {
       setLikeLoadingIds((prev) => new Set(prev).add(id));
 
       const token = await getToken();
-      if (!token) {
-        toast.error("Authentication required.");
-        setLikeLoadingIds((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-        return;
-      }
+      if (!token) throw new Error("Authentication required.");
 
       const { data } = await axios.post(
         "/api/user/toggle-like-creation",
@@ -65,14 +78,11 @@ const Community = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (data.success) {
-        toast.success(data.message || "Like toggled successfully.");
-        // Refresh creations to update like counts and states
-        await fetchCreations();
-      } else {
-        toast.error(data.message || "Failed to toggle like.");
+      if (!data.success) {
+        throw new Error(data.message || "Failed to toggle like.");
       }
     } catch (error) {
+      applyToggle(); // Revert the optimistic change
       console.error("Error toggling like:", error);
       toast.error(
         error.response?.data?.message ||
@@ -93,7 +103,7 @@ const Community = () => {
     if (user) {
       fetchCreations();
     }
-  }, [user]);
+  }, [user, fetchCreations]);
 
   const userId = user?.id;
 
@@ -107,13 +117,13 @@ const Community = () => {
           {creations.length === 0 ? (
             <p className="p-4 text-gray-600">No creations found.</p>
           ) : (
-            creations.map((creation, index) => {
+            creations.map((creation) => {
               const likedByUser =
                 creation.likes && userId && creation.likes.includes(userId);
               const isLikeLoading = likeLoadingIds.has(creation.id);
               return (
                 <div
-                  key={index}
+                  key={creation.id}
                   className="relative group p-3 w-full sm:w-1/2 lg:w-1/3"
                 >
                   <img

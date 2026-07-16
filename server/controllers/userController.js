@@ -19,7 +19,7 @@ export const getUsage = async (req, res) => {
             remaining,
         });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 }
 
@@ -30,9 +30,9 @@ export const getUserCreations= async(req, res) => {
         const creations = await sql `SELECT * FROM creations WHERE user_id = ${userId} ORDER BY created_at DESC`;
 
         res.json({success: true, creations});
-        
+
     } catch (error) {
-        res.json({success: false, message: error.message});
+        res.status(500).json({success: false, message: error.message});
     }
 }
 
@@ -42,9 +42,9 @@ export const getPublishedCreations= async(req, res) => {
         const creations = await sql `SELECT * FROM creations WHERE publish = true ORDER BY created_at DESC`;
 
         res.json({success: true, creations});
-        
+
     } catch (error) {
-        res.json({success: false, message: error.message});
+        res.status(500).json({success: false, message: error.message});
     }
 }
 
@@ -57,10 +57,11 @@ export const toogleLikeCreation= async(req, res) => {
         const [creation] = await sql `SELECT * FROM creations WHERE id = ${id}`
 
         if(!creation) {
-            return res.json({success: false, message: "Creation not found"})
+            return res.status(404).json({success: false, message: "Creation not found"})
         }
 
-        const currentLikes = creation.likes;
+        // `likes` can be NULL for older rows that were inserted without a value
+        const currentLikes = creation.likes || [];
         const userIdStr = userId.toString();
         let updatedLikes;
         let message;
@@ -80,7 +81,7 @@ export const toogleLikeCreation= async(req, res) => {
         res.json({success: true, message});
 
     } catch (error) {
-        res.json({success: false, message: error.message});
+        res.status(500).json({success: false, message: error.message});
     }
 }
 
@@ -94,12 +95,12 @@ export const deleteCreation = async (req, res) => {
         const [deleted] = await sql `DELETE FROM creations WHERE id = ${id} AND user_id = ${userId} RETURNING id`;
 
         if (!deleted) {
-            return res.json({success: false, message: "Creation not found"});
+            return res.status(404).json({success: false, message: "Creation not found"});
         }
 
         res.json({success: true, message: "Creation deleted successfully"});
 
     } catch (error) {
-        res.json({success: false, message: error.message});
+        res.status(500).json({success: false, message: error.message});
     }
 }

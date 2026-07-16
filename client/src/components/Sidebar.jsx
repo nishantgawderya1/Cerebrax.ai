@@ -32,11 +32,11 @@ const Sidebar = ({ sidebar, setSidebar }) => {
         <img src={user.imageUrl} alt="UserAvatar" className="w-16 h-16 rounded-full object-cover" />
         <h1 className="mt-2 text-center text-lg font-semibold">{user.fullName}</h1>
         <nav className="px-6 mt-5 text-sm text-gray-700 font-medium">
-          {navItems.map(({ to, label, Icon }) => (
+          {navItems.map((item) => (
             <NavLink
-              key={to}
-              to={to}
-              end={to === '/ai'}
+              key={item.to}
+              to={item.to}
+              end={item.to === '/ai'}
               onClick={() => setSidebar(false)}
               className={({ isActive }) =>
                 `px-4 py-2.5 flex items-center gap-3 rounded transition-colors duration-200 ${
@@ -48,8 +48,8 @@ const Sidebar = ({ sidebar, setSidebar }) => {
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
-                  <span>{label}</span>
+                  <item.Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
+                  <span>{item.label}</span>
                 </>
               )}
             </NavLink>
