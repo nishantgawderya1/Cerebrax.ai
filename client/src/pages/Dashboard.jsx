@@ -37,7 +37,7 @@ const Dashboard = () => {
         toast.error(data.message || 'Failed to fetch creations')
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch creations')
+      toast.error(error.response?.data?.message || error.message || 'Failed to fetch creations')
     }
     setLoading(false)
   }
@@ -56,7 +56,7 @@ const Dashboard = () => {
         toast.error(data.message || 'Failed to delete creation')
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to delete creation')
+      toast.error(error.response?.data?.message || error.message || 'Failed to delete creation')
     }
   }
 

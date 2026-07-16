@@ -69,7 +69,7 @@ const GenerateImages = () => {
         setContent('');
       }
     } catch (error) {
-      toast.error('Failed to generate image. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to generate image. Please try again.');
       setContent('');
       console.error('Generate image error:', error);
     } finally {

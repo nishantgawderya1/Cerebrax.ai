@@ -11,7 +11,15 @@ const app = express()
 
 await connectCloudinary()
 
-app.use(cors())
+// Restrict CORS to the configured frontend origin(s).
+// Set FRONTEND_URL in production (comma-separated for multiple origins);
+// falls back to the local Vite dev server.
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+app.use(cors({ origin: allowedOrigins, credentials: true }))
 app.use(express.json())
 app.use(clerkMiddleware())
 

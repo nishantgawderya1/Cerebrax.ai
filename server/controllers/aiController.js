@@ -23,7 +23,7 @@ export const generateArticle = async (req, res) => {
     const free_usage = req.free_usage;
 
     if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
-        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     const response = await AI.chat.completions.create({
@@ -53,7 +53,7 @@ export const generateArticle = async (req, res) => {
     res.json({ success: true, content })
   } catch (error) {
     console.log(error.message)
-    res.json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -66,7 +66,7 @@ export const generateBlogTitle = async (req, res) => {
     const free_usage = req.free_usage;
 
     if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
-        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     const response = await AI.chat.completions.create({
@@ -91,7 +91,7 @@ export const generateBlogTitle = async (req, res) => {
     res.json({ success: true, content })
   } catch (error) {
     console.log(error.message)
-    res.json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -104,7 +104,7 @@ export const generateImage = async (req, res) => {
     const free_usage = req.free_usage;
 
     if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
-        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     const formData = new FormData()
@@ -133,7 +133,7 @@ export const generateImage = async (req, res) => {
     res.json({ success: true, content: secure_url })
   } catch (error) {
     console.log(error.message)
-    res.json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -146,7 +146,7 @@ export const removeImageBackground = async (req, res) => {
     const free_usage = req.free_usage;
 
     if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
-        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     const{secure_url}=await cloudinary.uploader.upload(image.path, {transformation: [{effect: 'background_removal',
@@ -167,7 +167,7 @@ export const removeImageBackground = async (req, res) => {
     res.json({ success: true, content: secure_url })
   } catch (error) {
     console.log(error.message)
-    res.json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -184,7 +184,7 @@ export const removeImageObject = async (req, res) => {
 
 
     if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
-        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
 
@@ -208,7 +208,7 @@ export const removeImageObject = async (req, res) => {
     res.json({ success: true, content: imageUrl })
   } catch (error) {
     console.log(error.message)
-    res.json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -224,11 +224,11 @@ export const resumeReview = async (req, res) => {
 
 
     if (plan !== 'premium' && free_usage >= FREE_USAGE_LIMIT) {
-        return res.json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
+        return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
     if(resume.size > 5 * 1024 * 1024) { // Check if file size is greater than 5MB
-        return res.json({ success: false, message: 'File size exceeds the limit of 5MB.' })
+        return res.status(413).json({ success: false, message: 'File size exceeds the limit of 5MB.' })
     }
 
     const dataBuffer = fs.readFileSync(resume.path) // Assuming the file is uploaded as a buffer
@@ -260,6 +260,6 @@ export const resumeReview = async (req, res) => {
     res.json({ success: true, content })
   } catch (error) {
     console.log(error.message)
-    res.json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message })
   }
 }

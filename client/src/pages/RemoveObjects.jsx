@@ -66,7 +66,7 @@ const RemoveObjects = () => {
         setContent('');
       }
     } catch (error) {
-      toast.error('Failed to remove object. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to remove object. Please try again.');
       setContent('');
       console.error('Remove object error:', error);
     } finally {
