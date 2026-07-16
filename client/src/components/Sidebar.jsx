@@ -2,6 +2,7 @@ import { Protect, useClerk, useUser } from '@clerk/clerk-react'
 import { Eraser, FileText, Hash, House, Image, Scissors, SquarePen, Users, LogOut } from 'lucide-react'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAppContext } from '../context/AppContext'
 
 const navItems = [
   { to: '/ai', label: 'Dashboard', Icon: House },
@@ -17,6 +18,10 @@ const navItems = [
 const Sidebar = ({ sidebar, setSidebar }) => {
   const { user } = useUser()
   const { signOut, openUserProfile } = useClerk()
+  const { usage } = useAppContext()
+
+  const showMeter = usage && usage.plan !== 'premium'
+  const usedPct = showMeter ? Math.min((usage.free_usage / usage.limit) * 100, 100) : 0
 
   return (
     <div
@@ -52,8 +57,35 @@ const Sidebar = ({ sidebar, setSidebar }) => {
         </nav>
       </div>
 
-      <div className="w-full border-t border-gray-200 p-4 px-7 flex items-center justify-between">
-        <div onClick={openUserProfile} className="flex gap-2 items-center cursor-pointer">
+      <div className="w-full">
+        {showMeter && (
+          <div className="px-7 pb-3">
+            <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <span>Free creations</span>
+              <span className={usage.remaining === 0 ? 'text-red-500 font-medium' : ''}>
+                {usage.remaining} / {usage.limit} left
+              </span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  usage.remaining === 0
+                    ? 'bg-red-400'
+                    : 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA]'
+                }`}
+                style={{ width: `${usedPct}%` }}
+              />
+            </div>
+            {usage.remaining === 0 && (
+              <p className="mt-1.5 text-[11px] text-gray-500">
+                Free limit reached — upgrade to Premium for more.
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="border-t border-gray-200 p-4 px-7 flex items-center justify-between">
+          <div onClick={openUserProfile} className="flex gap-2 items-center cursor-pointer">
           <img src={user.imageUrl} alt="UserAvatar" className="w-8 h-8 rounded-full object-cover" />
           <div>
             <h1 className="text-sm font-medium">{user.fullName}</h1>
@@ -63,8 +95,9 @@ const Sidebar = ({ sidebar, setSidebar }) => {
               </Protect>
             </p>
           </div>
+          </div>
+          <LogOut onClick={signOut} className="w-5 h-5 text-gray-400 hover:text-gray-700 transition cursor-pointer" />
         </div>
-        <LogOut onClick={signOut} className="w-5 h-5 text-gray-400 hover:text-gray-700 transition cursor-pointer" />
       </div>
     </div>
   )

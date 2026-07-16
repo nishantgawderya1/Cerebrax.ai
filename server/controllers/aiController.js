@@ -6,10 +6,7 @@ import { clerkClient } from '@clerk/express';
 import axios from 'axios';
 import fs from 'fs'
 import pdf from 'pdf-parse/lib/pdf-parse.js'
-
-
-// Number of free creations every user gets across all tools before the premium gate applies
-const FREE_USAGE_LIMIT = 5;
+import { FREE_USAGE_LIMIT } from "../configs/plans.js";
 
 
 const AI = new OpenAI({

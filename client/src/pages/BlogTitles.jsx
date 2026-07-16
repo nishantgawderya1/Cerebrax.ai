@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Hash, Sparkles } from 'lucide-react';
+import { Hash, Sparkles, Copy } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Markdown from 'react-markdown';
 import { useAuth } from '@clerk/clerk-react';
+import { useAppContext } from '../context/AppContext';
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -25,6 +26,12 @@ const BlogTitles = () => {
   const [content, setContent] = useState('');
 
   const { getToken } = useAuth();
+  const { fetchUsage } = useAppContext();
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content);
+    toast.success('Copied to clipboard');
+  };
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -57,6 +64,7 @@ const BlogTitles = () => {
         // Set the content received from API to state for rendering
         setContent(data.content);
         toast.success('Title generated successfully!');
+        fetchUsage();
       } else {
         toast.error(data.message || 'Failed to generate title');
         setContent('');
@@ -128,9 +136,20 @@ const BlogTitles = () => {
 
       {/* Right column: Generated titles display */}
       <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96">
-        <div className="flex items-center gap-3">
-          <Hash className="w-5 h-5 text-[#8E37EB]" />
-          <h1 className="text-xl font-semibold">Generated Titles</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Hash className="w-5 h-5 text-[#8E37EB]" />
+            <h1 className="text-xl font-semibold">Generated Titles</h1>
+          </div>
+          {content && (
+            <button
+              onClick={handleCopy}
+              title="Copy to clipboard"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#8E37EB] transition-colors"
+            >
+              <Copy className="w-4 h-4" /> Copy
+            </button>
+          )}
         </div>
 
         {!content ? (

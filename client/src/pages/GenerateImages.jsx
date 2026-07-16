@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Image, ImageIcon, Sparkles } from 'lucide-react';
+import { Image, ImageIcon, Sparkles, Download } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
+import { useAppContext } from '../context/AppContext';
+import { downloadImage } from '../utils/downloadImage';
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -24,6 +26,7 @@ const GenerateImages = () => {
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
   const { getToken } = useAuth();
+  const { fetchUsage } = useAppContext();
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -60,6 +63,7 @@ const GenerateImages = () => {
       if (data.success) {
         setContent(data.content); // Assuming data.content is a valid image URL
         toast.success('Image generated successfully!');
+        fetchUsage();
       } else {
         toast.error(data.message || 'Failed to generate image. Please try again.');
         setContent('');
@@ -143,9 +147,20 @@ const GenerateImages = () => {
 
       {/* Right column */}
       <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96">
-        <div className="flex items-center gap-3">
-          <ImageIcon className="w-5 h-5 text-[#8E37EB]" />
-          <h1 className="text-xl font-semibold">Generated Image</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <ImageIcon className="w-5 h-5 text-[#8E37EB]" />
+            <h1 className="text-xl font-semibold">Generated Image</h1>
+          </div>
+          {content && (
+            <button
+              onClick={() => downloadImage(content, 'cerebrax-generated.png')}
+              title="Download image"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#8E37EB] transition-colors"
+            >
+              <Download className="w-4 h-4" /> Download
+            </button>
+          )}
         </div>
         {!content ? (
           <div className="flex-1 flex justify-center items-center">

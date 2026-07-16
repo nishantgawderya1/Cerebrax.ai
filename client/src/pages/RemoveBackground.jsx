@@ -1,8 +1,10 @@
-import { Eraser, Sparkles } from 'lucide-react';
+import { Eraser, Sparkles, Download } from 'lucide-react';
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
+import { useAppContext } from '../context/AppContext';
+import { downloadImage } from '../utils/downloadImage';
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -12,6 +14,7 @@ const RemoveBackground = () => {
   const [content, setContent] = useState('');
 
   const { getToken } = useAuth();
+  const { fetchUsage } = useAppContext();
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -45,6 +48,7 @@ const RemoveBackground = () => {
       if (data.success) {
         setContent(data.content); // Assume content is the URL of the processed image
         toast.success('Background removed successfully!');
+        fetchUsage();
       } else {
         toast.error(data.message || 'Failed to remove background. Please try again.');
         setContent('');
@@ -98,9 +102,20 @@ const RemoveBackground = () => {
 
       {/* Right column: Display processed image */}
       <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96">
-        <div className="flex items-center gap-3">
-          <Eraser className="w-5 h-5 text-[#FF4938]" />
-          <h1 className="text-xl font-semibold">Processed Image</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Eraser className="w-5 h-5 text-[#FF4938]" />
+            <h1 className="text-xl font-semibold">Processed Image</h1>
+          </div>
+          {content && (
+            <button
+              onClick={() => downloadImage(content, 'cerebrax-no-bg.png')}
+              title="Download image"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#FF4938] transition-colors"
+            >
+              <Download className="w-4 h-4" /> Download
+            </button>
+          )}
         </div>
 
         {!content ? (

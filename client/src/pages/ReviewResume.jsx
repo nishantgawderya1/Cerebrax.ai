@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { File, FileTerminal } from 'lucide-react';
+import { File, FileTerminal, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Markdown from 'react-markdown';
 import { useAuth } from '@clerk/clerk-react';
+import { useAppContext } from '../context/AppContext';
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -13,6 +14,12 @@ const ReviewResume = () => {
   const [content, setContent] = useState('');
 
   const { getToken } = useAuth();
+  const { fetchUsage } = useAppContext();
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content);
+    toast.success('Copied to clipboard');
+  };
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -46,6 +53,7 @@ const ReviewResume = () => {
       if (data.success) {
         setContent(data.content); // Assuming content is markdown text review
         toast.success('Resume reviewed successfully!');
+        fetchUsage();
       } else {
         toast.error(data.message || 'Failed to review resume. Please try again.');
         setContent('');
@@ -99,9 +107,20 @@ const ReviewResume = () => {
 
       {/* Right column: Analysis results display */}
       <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[600px]">
-        <div className="flex items-center gap-3">
-          <FileTerminal className="w-5 h-5 text-[#00DA83]" />
-          <h1 className="text-xl font-semibold">Analysis Results</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <FileTerminal className="w-5 h-5 text-[#00DA83]" />
+            <h1 className="text-xl font-semibold">Analysis Results</h1>
+          </div>
+          {content && (
+            <button
+              onClick={handleCopy}
+              title="Copy to clipboard"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#00DA83] transition-colors"
+            >
+              <Copy className="w-4 h-4" /> Copy
+            </button>
+          )}
         </div>
 
         {!content ? (
