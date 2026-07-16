@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import axios from "axios";
@@ -14,7 +14,7 @@ const Community = () => {
   const [likeLoadingIds, setLikeLoadingIds] = useState(new Set());
 
   // Fetch published creations with authentication token
-  const fetchCreations = async () => {
+  const fetchCreations = useCallback(async () => {
     setLoading(true);
     try {
       const token = await getToken();
@@ -35,11 +35,11 @@ const Community = () => {
       }
     } catch (error) {
       console.error("Error fetching creations:", error);
-      toast.error("Failed to fetch creations.");
+      toast.error(error.response?.data?.message || "Failed to fetch creations.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken]);
 
   // Optimistically toggle the like locally, then sync with the server (revert on failure)
   const imageLikeToggle = async (id) => {
@@ -103,7 +103,7 @@ const Community = () => {
     if (user) {
       fetchCreations();
     }
-  }, [user]);
+  }, [user, fetchCreations]);
 
   const userId = user?.id;
 
