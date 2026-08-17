@@ -95,6 +95,64 @@ export const generateBlogTitle = async (req, res) => {
   }
 }
 
+// --- Image generation ---------------------------------------------------------
+// ClipDrop's public API was discontinued (out-of-credit accounts get HTTP 402),
+// so image generation now uses Google's Gemini native image model — reusing the
+// existing GEMINI_API_KEY that already powers the text tools — with a keyless
+// Pollinations fallback so a tier/quota problem on the Gemini key can never take
+// the feature down. Both paths return a base64 data URI that Cloudinary stores.
+
+const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+
+// Generate via Gemini; returns a base64 data URI, or null so the caller can fall back.
+const generateImageWithGemini = async (prompt) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const { data } = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`,
+      { contents: [{ parts: [{ text: prompt }] }] },
+      {
+        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+        timeout: 90000,
+      }
+    );
+
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const inline = parts.map((p) => p.inlineData || p.inline_data).find(Boolean);
+    if (!inline?.data) {
+      console.warn('Gemini image: response contained no inline image data');
+      return null;
+    }
+    const mime = inline.mimeType || inline.mime_type || 'image/png';
+    return `data:${mime};base64,${inline.data}`;
+  } catch (error) {
+    const body = error.response?.data;
+    const detail = Buffer.isBuffer(body) ? body.toString('utf8') : JSON.stringify(body ?? error.message);
+    console.warn(`Gemini image failed (${error.response?.status || error.code}): ${String(detail).slice(0, 300)}`);
+    return null;
+  }
+};
+
+// Keyless fallback via Pollinations; returns a base64 data URI or throws.
+const generateImageWithPollinations = async (prompt) => {
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
+  const { data } = await axios.get(url, { responseType: 'arraybuffer', timeout: 120000 });
+  const base64 = Buffer.from(data, 'binary').toString('base64');
+  return `data:image/jpeg;base64,${base64}`;
+};
+
+// Try Gemini first, fall back to Pollinations. Returns a base64 data URI.
+const createImageDataUri = async (prompt) => {
+  // Escape hatch: set IMAGE_PROVIDER=pollinations to skip Gemini entirely.
+  if (process.env.IMAGE_PROVIDER !== 'pollinations') {
+    const viaGemini = await generateImageWithGemini(prompt);
+    if (viaGemini) return viaGemini;
+    console.log('Image generation: falling back to Pollinations');
+  }
+  return generateImageWithPollinations(prompt);
+};
+
 // Function to generate image
 export const generateImage = async (req, res) => {
   try {
@@ -107,18 +165,13 @@ export const generateImage = async (req, res) => {
         return res.status(403).json({ success: false, message: 'Free usage limit exceeded. Upgrade to premium for more requests.' })
     }
 
-    const formData = new FormData()
-    formData.append('prompt', prompt)
-    const { data } = await axios.post("https://clipdrop-api.co/text-to-image/v1", formData, {
-        headers: {
-            'x-api-key': process.env.CLIPDROP_API_KEY,
-        },
-        responseType: 'arraybuffer',
-    })
+    if (!prompt || !prompt.trim()) {
+        return res.status(400).json({ success: false, message: 'A prompt is required to generate an image.' })
+    }
 
-    const base64Image = `data:image/png;base64,${Buffer.from(data, 'binary').toString('base64')}`;
+    const imageDataUri = await createImageDataUri(prompt)
 
-    const {secure_url}=await cloudinary.uploader.upload(base64Image)
+    const {secure_url} = await cloudinary.uploader.upload(imageDataUri)
 
     await sql`INSERT INTO creations (user_id, prompt, content, type, publish ) VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${publish ?? false})`;
 
@@ -132,8 +185,8 @@ export const generateImage = async (req, res) => {
 
     res.json({ success: true, content: secure_url })
   } catch (error) {
-    console.log(error.message)
-    res.status(500).json({ success: false, message: error.message })
+    console.error('generateImage failed:', error.message)
+    res.status(500).json({ success: false, message: `Image generation failed: ${error.message}` })
   }
 }
 
