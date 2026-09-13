@@ -10,6 +10,8 @@ import RemoveObjects from './pages/RemoveObjects.jsx'
 import RemoveBackground from './pages/RemoveBackground.jsx'
 import ReviewResume from './pages/ReviewResume.jsx'
 import Community from './pages/Community.jsx'
+import ProductListing from './pages/ProductListing.jsx'
+import TextTool from './pages/TextTool.jsx'
 import {Toaster} from 'react-hot-toast'
 
 
@@ -27,6 +29,8 @@ const App = () => {
           <Route path='remove-object' element={<RemoveObjects />} />
           <Route path='remove-background' element={<RemoveBackground />} />
           <Route path='review-resume' element={<ReviewResume />} />
+          <Route path='product-listing' element={<ProductListing />} />
+          <Route path='text/:tool' element={<TextTool />} />
           <Route path='community' element={<Community />} />
         </Route>
       </Routes>
